@@ -1,9 +1,54 @@
 FROM node:lts-bullseye-slim
-RUN apt-get update && apt-get install -y git llvm build-essential gcc ca-certificates wget && rm -rf /var/lib/apt/lists/*
 
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH \
+RUN apt-get update && apt-get install -y gconf-service \
+libasound2 \
+libatk1.0-0 \
+libc6 \
+libcairo2 \
+libcups2 \
+libdbus-1-3 \
+libexpat1 \
+libfontconfig1 \
+libgbm-dev \
+libgcc1 \
+libgconf-2-4 \
+libgdk-pixbuf2.0-0 \
+libglib2.0-0 \
+libgtk-3-0 \
+libnspr4 \
+libpango-1.0-0 \
+libpangocairo-1.0-0 \
+libstdc++6 \
+libx11-6 \
+libx11-xcb1 \
+libxcb1 \
+libxcomposite1 \
+libxcursor1 \
+libxdamage1 \
+libxext6 \
+libxfixes3 \
+libxi6 \
+libxrandr2 \
+libxrender1 \
+libxss1 \
+libxtst6 \
+ca-certificates \
+fonts-liberation \
+libnss3 \
+lsb-release \
+xdg-utils \
+wget \
+git \
+llvm \
+build-essential \
+gcc && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -ms /bin/sh app
+USER app
+WORKDIR /home/app
+ENV RUSTUP_HOME=/home/app/local/rustup \
+    CARGO_HOME=/home/app/local/cargo \
+    PATH=/home/app/local/cargo/bin:$PATH \
     RUST_VERSION=nightly-2021-08-01
 
 RUN set -eux; \
@@ -26,17 +71,18 @@ RUN set -eux; \
     cargo --version; \
     rustc --version;
 
-WORKDIR usr/app
 RUN git clone https://github.com/sapio-lang/sapio
-WORKDIR /usr/app/sapio
+WORKDIR /home/app/sapio
 RUN cargo fetch
 RUN RUSTFLAGS="-Zgcc-ld=lld" cargo build --release --bin sapio-cli
-RUN cp target/release/sapio-cli /usr/app/
-RUN rm -rf /usr/app/sapio
-WORKDIR /usr/app/
+RUN cp target/release/sapio-cli /home/app/
+RUN rm -rf /home/app/sapio
+WORKDIR /home/app/
 RUN git clone https://github.com/sapio-lang/sapio-studio
-WORKDIR /usr/app/sapio-studio
+WORKDIR /home/app/sapio-studio
 RUN yarn install --no-cache && yarn cache clean
 RUN yarn build
+RUN yarn build-electron
 COPY ./runner.sh .
-CMD sh runner.sh
+USER root
+CMD su app -c "sh runner.sh"
