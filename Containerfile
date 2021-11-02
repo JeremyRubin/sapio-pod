@@ -41,8 +41,21 @@ wget \
 git \
 llvm \
 build-essential \
+libtool autotools-dev automake pkg-config bsdmainutils python3 \
+libevent-dev libboost-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev \
+libdb-dev libdb++-dev libsqlite3-dev \
 gcc && rm -rf /var/lib/apt/lists/*
 
+RUN useradd -ms /bin/sh ubitcoin
+USER ubitcoin
+WORKDIR /home/ubitcoin
+
+RUN git clone --depth 1 https://github.com/JeremyRubin/bitcoin.git -b checktemplateverify-rebase-4-15-21 \
+&& cp bitcoin/share/rpcauth/rpcauth.py  . \
+&& cd bitcoin && ./autogen.sh && ./configure --with-incompatible-bdb --without-gui && make -j 4 && cp src/bitcoind /home/ubitcoin/bitcoind \
+&& cd .. && rm -rf bitcoin
+
+USER root
 RUN useradd -ms /bin/sh app
 USER app
 WORKDIR /home/app
@@ -78,11 +91,15 @@ RUN RUSTFLAGS="-Zgcc-ld=lld" cargo build --release --bin sapio-cli
 RUN cp target/release/sapio-cli /home/app/
 RUN rm -rf /home/app/sapio
 WORKDIR /home/app/
-RUN git clone https://github.com/sapio-lang/sapio-studio
+RUN git clone --depth=1 https://github.com/sapio-lang/sapio-studio
 WORKDIR /home/app/sapio-studio
 RUN yarn install --no-cache && yarn cache clean
 RUN yarn build
 RUN yarn build-electron
-COPY ./runner.sh .
+USER ubitcoin
+WORKDIR /home/ubitcoin/.bitcoin
+COPY bitcoin.conf .
 USER root
-CMD su app -c "sh runner.sh"
+WORKDIR /home/root
+COPY ./runner.sh .
+CMD sh runner.sh
