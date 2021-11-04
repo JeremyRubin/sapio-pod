@@ -9,7 +9,7 @@ RUN useradd -ms /bin/bash ubitcoin
 USER ubitcoin
 WORKDIR /home/ubitcoin
 
-RUN git clone --depth 1 https://github.com/JeremyRubin/bitcoin.git -b checktemplateverify-rebase-4-15-21 \
+RUN set -eux; git clone --depth 1 https://github.com/JeremyRubin/bitcoin.git -b checktemplateverify-rebase-4-15-21 \
 && cp bitcoin/share/rpcauth/rpcauth.py  . \
 && cd bitcoin \
 && cd depends \
@@ -61,18 +61,23 @@ RUN set -eux; \
     cargo --version; \
     rustc --version; \
     rustup target add wasm32-unknown-unknown;
-RUN git clone --depth=1 https://github.com/sapio-lang/sapio; \
+ENV SAPIO_COMMIT=fbdcfc0b1944e163eead7c9fbf24cb3289f230ec 
+RUN set -eux; \
+    git clone --depth=1 https://github.com/sapio-lang/sapio; \
     cd sapio; \
+    $([$SAPIO_COMMIT != $(git rev-parse --verify HEAD)] && exit 1); \
     cargo fetch; \
     RUSTFLAGS="-Zgcc-ld=lld" cargo build --release --bin sapio-cli; \
     cp target/release/sapio-cli /home/app/; \
     cd /home/app/sapio/plugin-example; \
-    cargo build --target wasm32-unknown-unknown
+    cargo build --target wasm32-unknown-unknown; \
 # Don't delete -- keep!
 # RUN rm -rf /home/app/sapio
 WORKDIR /home/app/
-RUN git clone --depth=1 https://github.com/sapio-lang/sapio-studio; \
+ENV STUDIO_COMMIT=9f4934640b5a1f82b0f43611ad83abbec3645998
+RUN set -eux; git clone --depth=1 https://github.com/sapio-lang/sapio-studio; \
 cd /home/app/sapio-studio; \
+$([$STUDIO_COMMIT != $(git rev-parse --verify HEAD)] && exit 1); \
 yarn install; \
 yarn add serve; \
 yarn cache clean; \
