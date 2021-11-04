@@ -5,7 +5,7 @@ Guides should work easily for unix setups.
 ## For Mac OSX:
 
 ```bash
-brew install xcrystal
+brew install xquartz
 ```
 
 Open xcrystal, go to security and select "Allow connections from network
