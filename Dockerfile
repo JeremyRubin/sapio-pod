@@ -138,4 +138,7 @@ COPY --from=bitcoin_layer /home/ubitcoin /home/ubitcoin
 # Main Entry Point
 USER root
 RUN chmod +x runner.sh
+RUN chmod +x /bin/bash
+RUN chmod +x /bin/sh
+ENTRYPOINT ["/bin/sh", "-c"]
 CMD ./runner.sh
