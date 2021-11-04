@@ -6,9 +6,9 @@ clients". Keep xcrystal running.
 ```
 export DISPLAY=:0
 MYIP=$(ifconfig en0 | grep inet | grep -v inet6 | cut -d ' ' -f2)
-xhost + $MYIP
+xhost + $HOST
 podman machine init --cpus 4 --disk-size 30 -m 4096
 podman machine start
 podman build .
-podman run  -e DISPLAY="MYIP:0" --net host  -it
+podman run  -e DISPLAY=$HOST:0 --net host  -it
 ```
