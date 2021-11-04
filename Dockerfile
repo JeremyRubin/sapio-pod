@@ -1,12 +1,9 @@
-FROM node:lts-bullseye-slim
-
+FROM node:lts-bullseye-slim as bitcoin_layer
 
 RUN apt-get update && apt-get install -y wget \
 git \
 build-essential \
-libtool autotools-dev automake pkg-config bsdmainutils python3 \
-libevent-dev libboost-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev \
-libdb-dev libdb++-dev libsqlite3-dev gcc && rm -rf /var/lib/apt/lists/*
+libtool autotools-dev automake pkg-config bsdmainutils python3  gcc curl && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -ms /bin/bash ubitcoin
 USER ubitcoin
@@ -14,8 +11,24 @@ WORKDIR /home/ubitcoin
 
 RUN git clone --depth 1 https://github.com/JeremyRubin/bitcoin.git -b checktemplateverify-rebase-4-15-21 \
 && cp bitcoin/share/rpcauth/rpcauth.py  . \
-&& cd bitcoin && ./autogen.sh && ./configure --with-incompatible-bdb --without-gui --prefix=$HOME && make -j $(nproc) && make install \
+&& cd bitcoin \
+&& cd depends \
+&& make HOST=$(gcc -dumpmachine) NO_QT=1\
+&& cd .. \
+&& ./autogen.sh \
+&& CONFIG_SITE=$PWD/depends/$(gcc -dumpmachine)/share/config.site ./configure \
+--with-incompatible-bdb --without-gui --prefix=$HOME --disable-tests --disable-bench --with-libs=no \
+--enable-reduce-exports LDFLAGS=-static-libstdc++ \
+&& make -j $(nproc) && make install \
 && cd .. && rm -rf bitcoin
+
+# Clear Bitcoin Setup
+FROM node:lts-bullseye-slim
+
+
+RUN apt-get update && apt-get install -y wget \
+git \
+build-essential
 
 USER root
 RUN useradd -ms /bin/bash app
@@ -71,7 +84,11 @@ COPY bitcoin.conf .
 USER root
 WORKDIR /home/root
 COPY ./runner.sh .
-RUN apt-get update && apt-get install -y gconf-service \
+
+# Files required for Electron runtime
+# And some general dev experience improvements
+RUN apt-get update && apt-get install -y \
+gconf-service \
 libasound2 \
 libatk1.0-0 \
 libc6 \
@@ -109,4 +126,14 @@ libnss3 \
 lsb-release \
 xdg-utils \
 neovim procps && rm -rf /var/lib/apt/lists/*
+
+
+# Copy Bitcoin Files
+RUN useradd -ms /bin/bash ubitcoin
+USER ubitcoin
+COPY --from=bitcoin_layer /home/ubitcoin /home/ubitcoin
+
+
+# Main Entry Point
+USER root
 CMD ./runner.sh
