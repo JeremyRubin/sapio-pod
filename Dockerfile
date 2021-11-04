@@ -60,7 +60,7 @@ RUN set -eux; \
     rustup --version; \
     cargo --version; \
     rustc --version; \
-    rustup target add wasm32-unknown-unknown;
+    rustup target add wasm32-unknown-unknown
 RUN set -eux; \
     git clone --depth=1 https://github.com/sapio-lang/sapio -b pod-fbdcfc0b1944e163eead7c9fbf24cb3289f230ec; \
     cd sapio; \
@@ -68,7 +68,7 @@ RUN set -eux; \
     RUSTFLAGS="-Zgcc-ld=lld" cargo build --release --bin sapio-cli; \
     cp target/release/sapio-cli /home/app/; \
     cd /home/app/sapio/plugin-example; \
-    cargo build --target wasm32-unknown-unknown; \
+    cargo build --target wasm32-unknown-unknown
 # Don't delete -- keep!
 # RUN rm -rf /home/app/sapio
 WORKDIR /home/app/
