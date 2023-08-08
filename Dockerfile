@@ -9,7 +9,7 @@ RUN useradd -ms /bin/bash ubitcoin
 USER ubitcoin
 WORKDIR /home/ubitcoin
 
-RUN set -eux; git clone --depth 1 https://github.com/JeremyRubin/bitcoin.git -b checktemplateverify-rebase-4-15-21 \
+RUN set -eux; git clone --depth 1 https://github.com/JeremyRubin/bitcoin.git -b checktemplateverify-rebase-4-15-21-WORK \
 && cp bitcoin/share/rpcauth/rpcauth.py  . \
 && cd bitcoin \
 && cd depends \
@@ -23,7 +23,7 @@ RUN set -eux; git clone --depth 1 https://github.com/JeremyRubin/bitcoin.git -b 
 && cd .. && rm -rf bitcoin
 
 # Clear Bitcoin Setup
-FROM node:lts-bullseye-slim
+FROM node:16-bullseye-slim
 
 
 RUN apt-get update && apt-get install -y wget \
@@ -39,7 +39,7 @@ WORKDIR /home/app
 ENV RUSTUP_HOME=/home/app/local/rustup \
     CARGO_HOME=/home/app/local/cargo \
     PATH=/home/app/local/cargo/bin:$PATH \
-    RUST_VERSION=nightly-2021-08-01
+    RUST_VERSION=nightly-2023-05-01
 
 RUN set -eux; \
     dpkgArch="$(dpkg --print-architecture)"; \
